@@ -21,13 +21,18 @@ while True:
 	
 	# b)
 	cipher = input('Enter cipher to crack\n>> ')
-	keyword = ''.join(l for l in list(letters.keys()))
+	key = collections.Counter(cipher)
+	letters = ''.join(l for l in list(letters.keys()))
+
+	keyword = ''.join(l for l in list(key.keys()))
+	
 	key = ''.join([l for l in alphabet if l not in keyword])
 	key = keyword + key 
+	
 	# print(key)
 	output = ''
 	for l in cipher:
 		if l in alphabet:
-			i = alphabet.index(l)
+			i = letters.index(l)
 			output += key[i]
 	print(output)
