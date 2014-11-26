@@ -4,8 +4,13 @@ import string
 import os
 import time
 
+#Sets path as root of script
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
+
 # Makes a list of words from the dictionary file
-with open('/Users/jacob/Desktop/Python/dictionary.txt', 'r') as thefile:
+with open('dictionary.txt', 'r') as thefile:
 	all_words = thefile.read().split()
 
 # These strings are stored in a variable to avoid clogging up code later on.
