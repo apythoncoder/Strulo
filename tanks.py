@@ -1,10 +1,8 @@
 import random
+import time
 from math import cos, sin, pi
-from tkinter import *
-"""
-There's a problem with the starting x value of the tank - it uses the previous tank's one, not the
-current tank's one. the variable tis is stored in is `sx`.
-"""
+from Tkinter import *
+
 
 def generate_tanks():
 	global tanks, tank_one, tank_two
@@ -51,9 +49,10 @@ def fire():
 	# Creates explosion
 	ex, ey, fx, fy = x-p+sx, h-y-p, x+p+sx, h-y+p
 	canvas.create_oval(ex, ey, fx, fy, fill='orange', tags='line')
+	canvas.update()
 	# Checks for hit
 	hit = canvas.find_overlapping(ex, ey, fx, fy)
-	if tank_one or tank_two in hit:
+	if tank_one in hit or tank_two in hit:
 		if tank_one in hit:
 			canvas.delete(tank_one)
 			winner = 2
@@ -62,13 +61,20 @@ def fire():
 			winner = 1
 		win.config(text='Player {0} Wins!'.format(winner))
 		canvas.delete('tank')
+		canvas.delete('line')
 		generate_tanks()
 	if player == 1:
 		player = 2
 	else:
 		player = 1
 
-
+def draw_angle(event):
+	canvas.delete('angle')
+	sx = tanks[player-1]
+	th = theta.get()*pi/180
+	th = th-90
+	canvas.create_line(sx, h, sx-80*sin(th), h-80*cos(th), fill='red', tags=('angle'))
+ 
 winner = 0
 player = 1
 tanks = [0, 0]
@@ -91,6 +97,7 @@ velocity_label = Label(master, text='Power')
 velocity = Scale(master, from_=0, to=100, orient=HORIZONTAL)
 fire_button = Button(master, text='Fire!', width=20, command=fire)
 
+
 win.pack()
 canvas.pack()
 theta_label.pack()
@@ -99,6 +106,8 @@ velocity_label.pack()
 velocity.pack()
 player_turn.pack()
 fire_button.pack()
+
+theta.bind('<Motion>', draw_angle)
 
 gravity = Spinbox(dev, from_=0, to=100, increment=0.01)
 gravity.delete(0,END)
@@ -113,10 +122,9 @@ clock.delete(0,END)
 clock.insert(0, '0.01')
 clock_label = Label(dev, text='Smoothness')
 tank_button = Button(dev, text='Generate Tanks', width=20, command=generate_tanks)
-clock_label.pack()
 
-gravity.pack()
 gravity_label.pack()
+gravity.pack()
 radius_label.pack()
 radius.pack()
 clock_label.pack()
@@ -124,5 +132,6 @@ clock.pack()
 tank_button.pack()
 
 generate_tanks()
+
 mainloop()
 
