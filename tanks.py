@@ -1,5 +1,6 @@
 import random
 import time
+import hashlib
 from math import cos, sin, pi
 from Tkinter import *
 
@@ -9,13 +10,17 @@ def generate_tanks():
 	# Clears old tanks
 	tanks = [0, 0]
 	canvas.delete('tank')
-	
 	# Generates two random tanks
 	tanks[0] = random.randint(50, 480)
 	tanks[1] = random.randint(520, 950)
 	tank_one = canvas.create_rectangle(tanks[0]-20, h, tanks[0], h-20, fill='blue', tags=('tank'))
 	tank_two = canvas.create_rectangle(tanks[1]-20, h, tanks[1], h-20, fill='red', tags=('tank'))
-
+	generate_obstacle()
+def generate_obstacle():
+	global obstacle
+	canvas.delete(obstacle)
+	i = random.randint(tanks[0]+20, tanks[1]-20)
+	obstacle = canvas.create_rectangle(i-20, h, i, h-40, fill='brown', tags=('obstacle'))
 def fire():
 	global player, winner, sx
 	# Clears old arc and win message
@@ -43,8 +48,10 @@ def fire():
 		# Reverse curve for player 2
 		if player == 2:
 			x = x*-1
-		canvas.create_line(ox+sx, h-oy, x+sx, h-y, tags=('line'))
-		if y < 0:
+		l = canvas.create_line(ox+sx, h-oy, x+sx, h-y, tags=('line'))
+		x1, y1, x2, y2 = canvas.coords(obstacle)
+		hit = canvas.find_overlapping(x1, y1, x2, y2)
+		if y < 0 or l in hit:
 			break
 	# Creates explosion
 	ex, ey, fx, fy = x-p+sx, h-y-p, x+p+sx, h-y+p
@@ -70,6 +77,8 @@ def fire():
 
 def draw_angle(event):
 	'''
+	Disabled for now
+	
 	canvas.delete('angle')
 	sx = tanks[player-1]
 	th = theta.get()*pi/180
@@ -78,14 +87,42 @@ def draw_angle(event):
 	'''
  	return
  
+def lock_dev():
+	gravity.config(state=DISABLED)
+	radius.config(state=DISABLED)
+	clock.config(state=DISABLED)
+	tank_button.config(state=DISABLED)
+	lock_button.pack_forget()
+	unlock.pack()
+	unlock_button.pack()
 
+def unlock_dev():
+	gravity.config(state=NORMAL)
+	radius.config(state=NORMAL)
+	clock.config(state=NORMAL)
+	tank_button.config(state=NORMAL)
+	unlock.pack_forget()
+	unlock_button.pack_forget()
+	unlock.delete(0,END)
+	unlock.insert(0, '')
+	lock_button.pack()
+
+def unlock_check():
+	
+	if hashlib.md5(unlock.get()).hexdigest() == '5f4dcc3b5aa765d61d8327deb882cf99':
+		unlock_dev()
+	else:
+		print('Fail.')
+	
 winner = 0
 player = 1
 tanks = [0, 0]
 tank_one = None
 tank_two = None
+obstacle = None
 h = 400
 w = 1000
+m = hashlib.md5()
 
 master = Tk()
 master.wm_title('Tanks!')
@@ -127,6 +164,10 @@ clock.insert(0, '0.01')
 clock_label = Label(dev, text='Smoothness')
 tank_button = Button(dev, text='Generate Tanks', width=20, command=generate_tanks)
 
+unlock = Entry(dev, show="*", width=20)
+unlock_button = Button(dev, text='Unlock', width=20, command=unlock_check)
+lock_button = Button(dev, text='Lock', width=20, command=lock_dev)
+
 gravity_label.pack()
 gravity.pack()
 radius_label.pack()
@@ -135,7 +176,7 @@ clock_label.pack()
 clock.pack()
 tank_button.pack()
 
+lock_dev()
 generate_tanks()
-
 mainloop()
 
