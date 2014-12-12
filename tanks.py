@@ -69,12 +69,16 @@ def fire():
 		player = 1
 
 def draw_angle(event):
+	'''
 	canvas.delete('angle')
 	sx = tanks[player-1]
 	th = theta.get()*pi/180
 	th = th-90
 	canvas.create_line(sx, h, sx-80*sin(th), h-80*cos(th), fill='red', tags=('angle'))
+	'''
+ 	return
  
+
 winner = 0
 player = 1
 tanks = [0, 0]
