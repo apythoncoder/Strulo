@@ -2,7 +2,10 @@ import random
 import time
 import hashlib
 from math import cos, sin, pi
-from Tkinter import *
+try:
+	from tkinter import * # 3.3
+except ImportError:
+	from Tkinter import * # 2.7
 
 
 def generate_tanks():
@@ -11,8 +14,8 @@ def generate_tanks():
 	tanks = [0, 0]
 	canvas.delete('tank')
 	# Generates two random tanks
-	tanks[0] = random.randint(50, 480)
-	tanks[1] = random.randint(520, 950)
+	tanks[0] = random.randint(10, int(w/2)-50)
+	tanks[1] = random.randint(int(w/2)+50, w-10)
 	tank_one = canvas.create_rectangle(tanks[0]-20, h, tanks[0], h-20, fill='blue', tags=('tank'))
 	tank_two = canvas.create_rectangle(tanks[1]-20, h, tanks[1], h-20, fill='red', tags=('tank'))
 	generate_obstacle()
@@ -24,7 +27,7 @@ def generate_obstacle():
 	obstacle = canvas.create_rectangle(i-20, h, i, h-40, fill='brown', tags=('obstacle'))
 	
 def fire():
-	global player, winner, sx, clicked
+	global player, winner, sx, clicked, scores
 	fire_button.config(state=DISABLED)
 	# Clears old arc and win message
 	canvas.delete('line')
@@ -42,6 +45,7 @@ def fire():
 
 	# Where the parabola is created
 	while True:
+		canvas.update()
 		ox, oy = x, y
 		x = v*t*cos(th)
 		y = v*t*sin(th) - g*0.5*t**2
@@ -51,11 +55,9 @@ def fire():
 		if player == 2:
 			x = x*-1
 		l = canvas.create_line(ox+sx, h-oy, x+sx, h-y, tags=('line'))
+		
 		x1, y1, x2, y2 = canvas.coords(obstacle)
 		hit = canvas.find_overlapping(x1, y1, x2, y2)
-	
-		time.sleep(0.01)
-		canvas.update()
 		if y < 0 or l in hit:
 			break
 	# Creates explosion
@@ -71,6 +73,7 @@ def fire():
 		elif tank_two in hit:
 			canvas.delete(tank_two)
 			winner = 1
+		scores[winner-1] += 1
 		win.config(text='Player {0} Wins!'.format(winner))
 		canvas.delete('tank')
 		canvas.delete('line')
@@ -80,19 +83,8 @@ def fire():
 	else:
 		player = 1
 	player_turn.config(text='Player {0}\'s go.'.format(player))
+	score_label.config(text=score_text.format(scores[0], scores[1]))
 	fire_button.config(state=NORMAL)
-
-def draw_angle(event):
-	'''
-	Disabled for now
-	
-	canvas.delete('angle')
-	sx = tanks[player-1]
-	th = theta.get()*pi/180
-	th = th-90
-	canvas.create_line(sx, h, sx-80*sin(th), h-80*cos(th), fill='red', tags=('angle'))
-	'''
- 	return
  
 def lock_dev():
 	gravity.config(state=DISABLED)
@@ -115,12 +107,15 @@ def unlock_dev():
 	lock_button.pack()
 
 def unlock_check():
+	# A password is used to stop players fiddling with the settings, and so I can
+	# test out the best values easily.
 	if hashlib.md5(unlock.get()).hexdigest() == '5f4dcc3b5aa765d61d8327deb882cf99':
 		unlock_dev()
 	else:
 		print('Fail.')
 	
-	
+
+# Starting variables	
 winner = 0
 player = 1
 tanks = [0, 0]
@@ -128,36 +123,49 @@ tank_one = None
 tank_two = None
 obstacle = None
 h = 400
-w = 1000
+scores = [0, 0]
+score_text = 'Scores\nPlayer 1: {0}\nPlayer 2: {1}'
 m = hashlib.md5()
 
+# Creates base windows
 master = Tk()
 master.wm_title('Tanks!')
+w = master.winfo_screenwidth()
+
 dev = Tk()
 dev.wm_title('Dev')
+controls = Tk()
+controls.wm_title('Controls')
 
-win = Label(master, text='')
+# Main window
 canvas = Canvas(master, width=w, height=h, bg='gray')
-player_turn = Label(master, text='Player 1\'s go.')
-theta_label = Label(master, text='Angle')
-theta = Scale(master, from_=1, to=90, orient=HORIZONTAL)
-theta.set(45)
-velocity_label = Label(master, text='Power')
-velocity = Scale(master, from_=0, to=100, orient=HORIZONTAL)
-velocity.set(50)
-fire_button = Button(master, text='Fire!', width=20, command=fire)
-
-win.pack()
 canvas.pack()
+
+# Controller window
+win = Label(controls, text='')
+player_turn = Label(controls, text='Player 1\'s go.')
+theta_label = Label(controls, text='Angle')
+theta = Scale(controls, from_=1, to=90, orient=HORIZONTAL)
+theta.set(45)
+velocity_label = Label(controls, text='Power')
+velocity = Scale(controls, from_=0, to=100, orient=HORIZONTAL)
+velocity.set(50)
+fire_button = Button(controls, text='Fire!', width=20, command=fire)
+score_label = Label(controls, text=score_text.format(scores[0], scores[1]))
+
+
+score_label.pack()
+player_turn.pack()
+win.pack()
+
 theta_label.pack()
 theta.pack()
 velocity_label.pack()
 velocity.pack()
-player_turn.pack()
 fire_button.pack()
 
-# theta.bind('<Motion>', draw_angle)
 
+# Dev window
 gravity = Spinbox(dev, from_=0, to=100, increment=0.01)
 gravity.delete(0,END)
 gravity.insert(0, '9.81')
@@ -184,6 +192,10 @@ clock_label.pack()
 clock.pack()
 tank_button.pack()
 
+
+# Sets the stage
 lock_dev()
 generate_tanks()
+
+# Runs the program
 mainloop()
